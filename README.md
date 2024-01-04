@@ -32,7 +32,6 @@ In this example we will prepare 3 packages from github for merging into monorepo
 
 ```
 git init
-git remote add main-repository http://github.com/vendor/main-repository.git
 git remote add package-alpha http://github.com/vendor/alpha.git
 git remote add package-beta http://github.com/vendor/beta.git
 git fetch --all --no-tags
@@ -46,18 +45,17 @@ Optionally you can specify a directory where the repository will be located by p
 
 The command will rewrite history of all mentioned repositories as if they were developed in separate subdirectories.
 
-Only branches `master` will be merged together, other branches will be kept only from first package to avoid possible branch name conflicts.
+Only branches `master`/`main` will be merged together, other branches will be discarded.
 
 ```
 ~/monorepo-tools/monorepo_build.sh \
-    main-repository package-alpha:packages/alpha package-beta:packages/beta
+    main-repository package-alpha:alpha package-beta:beta
 ```
 
 This may take a while, depending on the size of your repositories.
 
-Now your `master` branch should contain all packages in separate directories. For our example it would mean:
+Now your `main` branch should contain all packages in separate directories. For our example it would mean:
 
--   **main-repository/** - contains repository _vendor/main-repository_
 -   **packages/**
     -   **alpha/** - contains repository _vendor/alpha_
     -   **beta/** - contains repository _vendor/beta_

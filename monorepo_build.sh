@@ -22,6 +22,7 @@ if [ "$#" -lt "2" ]; then
     		exit;;
     esac
 fi
+
 # Get directory of the other scripts
 MONOREPO_SCRIPT_DIR=$(dirname "$0")
 # Wipe original refs (possible left-over back-up after rewriting git history)
@@ -34,24 +35,25 @@ for PARAM in $@; do
     if [ "$SUBDIRECTORY" == "" ]; then
         SUBDIRECTORY=$REMOTE
     fi
-    # Rewrite all branches from the first remote, only master branches from others
-    if [ "$PARAM" == "$1" ]; then
-        echo "Building all branches of the remote '$REMOTE'"
-        $MONOREPO_SCRIPT_DIR/load_branches_from_remote.sh $REMOTE
-        $MONOREPO_SCRIPT_DIR/rewrite_history_into.sh $SUBDIRECTORY --branches
-        MERGE_REFS='master'
-    else
-        echo "Building branch 'master' of the remote '$REMOTE'"
-        git checkout --detach $REMOTE/master
-        $MONOREPO_SCRIPT_DIR/rewrite_history_into.sh $SUBDIRECTORY
-        MERGE_REFS="$MERGE_REFS $(git rev-parse HEAD)"
+
+    echo "Building branch 'master/main' of the remote '$REMOTE'"
+    REMOTE_MAIN=master
+    $MONOREPO_SCRIPT_DIR/main_branch_exists.sh $REMOTE
+    MAIN_EXISTS=$?
+    if [ $MAIN_EXISTS -eq 1 ]; then
+      REMOTE_MAIN=main
     fi
+
+    git checkout --detach $REMOTE/$REMOTE_MAIN
+    $MONOREPO_SCRIPT_DIR/rewrite_history_into.sh packages/$SUBDIRECTORY
+    MERGE_REFS="$MERGE_REFS $(git rev-parse HEAD)"
+
     # Wipe the back-up of original history
     $MONOREPO_SCRIPT_DIR/original_refs_wipe.sh
 done
 # Merge all master branches
 COMMIT_MSG="merge multiple repositories into a monorepo"$'\n'$'\n'"- merged using: 'monorepo_build.sh $@'"$'\n'"- see https://github.com/shopsys/monorepo-tools"
-git checkout master
+git checkout main
 echo "Merging refs: $MERGE_REFS"
 git merge --no-commit -q $MERGE_REFS --allow-unrelated-histories
 echo 'Resolving conflicts using trees of all parents'
